@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Insta AI Tool</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #f4f4f4; display: flex; justify-content: center; padding: 40px 16px; }
+    .card { background: white; border-radius: 12px; padding: 32px; width: 100%; max-width: 560px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    h1 { font-size: 22px; margin-bottom: 24px; color: #111; }
+    label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; margin-top: 16px; }
+    input, select, textarea { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+    textarea { resize: vertical; min-height: 80px; }
+    button { margin-top: 24px; width: 100%; padding: 12px; background: #6c47ff; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
+    button:hover { background: #5a38e0; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    .result { margin-top: 24px; }
+    .result-box { background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+    .result-box.image-box { padding: 0; overflow: hidden; }
+    .result-box.image-box img { width: 100%; border-radius: 8px; display: block; }
+    .label { font-size: 12px; font-weight: 500; color: #888; margin-bottom: 8px; margin-top: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .status { margin-top: 12px; font-size: 13px; color: #555; text-align: center; }
+    .status.success { color: #2e7d32; }
+    .status.error { color: #c62828; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Insta AI Tool</h1>
+
+    <label>Your OpenRouter API Key</label>
+    <input type="password" id="apiKey" placeholder="Paste your OpenRouter API key here">
+
+    <label>Niche</label>
+    <input type="text" id="niche" placeholder="e.g. fitness, food, fashion, crypto">
+
+    <label>Tone</label>
+    <select id="tone">
+      <option value="professional">Professional</option>
+      <option value="casual and fun">Casual & Fun</option>
+      <option value="motivational">Motivational</option>
+      <option value="educational">Educational</option>
+      <option value="witty">Witty</option>
+    </select>
+
+    <label>Post Topic</label>
+    <textarea id="topic" placeholder="e.g. 5 morning habits that changed my life"></textarea>
+
+    <button id="generateBtn" onclick="generate()">Generate Post</button>
+
+    <div class="result" id="result" style="display:none">
+      <div class="label">Caption + Hashtags</div>
+      <div class="result-box" id="captionBox"></div>
+
+      <div class="label">Best Time to Post</div>
+      <div class="result-box" id="timeBox"></div>
+
+      <div class="label">Generated Image</div>
+      <div class="result-box image-box"><img id="generatedImage" src="" alt="Generated image"></div>
+
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+
+  <script>
+    async function generate() {
+      const apiKey = document.getElementById('apiKey').value.trim();
+      const niche = document.getElementById('niche').value.trim();
+      const tone = document.getElementById('tone').value;
+      const topic = document.getElementById('topic').value.trim();
+      const btn = document.getElementById('generateBtn');
+      const status = document.getElementById('status');
+
+      if (!apiKey || !niche || !topic) {
+        alert('Please fill in all fields.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+      status.textContent = '';
+      document.getElementById('result').style.display = 'none';
+
+      const prompt = `You are an Instagram content expert.
+Niche: ${niche}
+Tone: ${tone}
+Topic: ${topic}
+
+Generate the following in this exact format:
+
+CAPTION:
+[Write an engaging Instagram caption, 3-5 sentences, with emojis]
+
+HASHTAGS:
+[Write 15 relevant hashtags]
+
+BEST TIME:
+[Best day and time to post this for maximum engagement, one line]
+
+IMAGE PROMPT:
+[A short vivid image generation prompt that visually represents this post, max 20 words]`;
+
+      try {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+            'HTTP-Referer': 'http://localhost:3000',
+            'X-Title': 'Insta AI Tool'
+          },
+          body: JSON.stringify({
+             model: 'deepseek/deepseek-r1:free',
+            messages: [{ role: 'user', content: prompt }]
+          })
+        });
+
+        const data = await response.json();
+        console.log('OpenRouter response:', data);
+
+        const text = data.choices?.[0]?.message?.content;
+        if (!text) throw new Error('No response. Check your API key or try again.');
+
+        const captionMatch = text.match(/CAPTION:\n([\s\S]*?)(?=\nHASHTAGS:)/);
+        const hashtagsMatch = text.match(/HASHTAGS:\n([\s\S]*?)(?=\nBEST TIME:)/);
+        const timeMatch = text.match(/BEST TIME:\n([\s\S]*?)(?=\nIMAGE PROMPT:)/);
+        const imagePromptMatch = text.match(/IMAGE PROMPT:\n([\s\S]*?)$/);
+
+        const caption = captionMatch ? captionMatch[1].trim() : text;
+        const hashtags = hashtagsMatch ? hashtagsMatch[1].trim() : '';
+        const bestTime = timeMatch ? timeMatch[1].trim() : '';
+        const imagePrompt = imagePromptMatch ? imagePromptMatch[1].trim() : niche + ' ' + topic;
+
+        document.getElementById('captionBox').textContent = caption + (hashtags ? '\n\n' + hashtags : '');
+        document.getElementById('timeBox').textContent = bestTime || 'Check your analytics for best times';
+
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imagePrompt + ', instagram post style, high quality, vibrant')}?width=1080&height=1080&nologo=true`;
+        document.getElementById('generatedImage').src = imageUrl;
+        document.getElementById('result').style.display = 'block';
+
+        status.textContent = 'Post generated! Image is loading...';
+        status.className = 'status success';
+
+      } catch (err) {
+        console.error(err);
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+        document.getElementById('result').style.display = 'block';
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Generate Post';
+    }
+  </script>
+</body>
+</html>
