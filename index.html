@@ -3,151 +3,727 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Insta AI Tool</title>
+  <title>PostAI — Instagram Content Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface2: #1a1a24;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.12);
+      --accent: #c8f060;
+      --accent2: #7c6aff;
+      --text: #f0f0f0;
+      --muted: #6b6b80;
+      --muted2: #9898aa;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: sans-serif; background: #f4f4f4; display: flex; justify-content: center; padding: 40px 16px; }
-    .card { background: white; border-radius: 12px; padding: 32px; width: 100%; max-width: 560px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-    h1 { font-size: 22px; margin-bottom: 4px; color: #111; }
-    .subtitle { font-size: 13px; color: #888; margin-bottom: 24px; }
-    label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; margin-top: 16px; }
-    input, select, textarea { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
-    textarea { resize: vertical; min-height: 80px; }
-    button.main-btn { margin-top: 24px; width: 100%; padding: 12px; background: #6c47ff; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
-    button.main-btn:hover { background: #5a38e0; }
-    button.main-btn:disabled { background: #aaa; cursor: not-allowed; }
-    .result { margin-top: 24px; }
-    .result-box { background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
-    .img-wrap { border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0; background: #f9f9f9; min-height: 80px; display: flex; align-items: center; justify-content: center; }
-    .img-wrap img { width: 100%; display: block; }
-    .img-placeholder { font-size: 13px; color: #aaa; padding: 2rem; }
-    .sec-label { font-size: 11px; font-weight: 500; color: #aaa; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; margin-top: 20px; }
-    .btn-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-    .action-btn { padding: 7px 14px; font-size: 13px; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; background: white; color: #444; }
-    .action-btn:hover { background: #f4f4f4; }
-    .buffer-btn { background: #4a90e2; color: white; border: none; }
-    .buffer-btn:hover { background: #357abd; }
-    .dl-btn { background: #27ae60; color: white; border: none; }
-    .dl-btn:hover { background: #1e8449; }
-    .status { margin-top: 12px; font-size: 13px; text-align: center; }
-    .status.ok { color: #27ae60; }
-    .status.err { color: #e74c3c; }
-    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Glow orbs */
+    .orb1 {
+      position: fixed; top: -200px; right: -100px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,106,255,0.15) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    .orb2 {
+      position: fixed; bottom: -150px; left: -100px;
+      width: 400px; height: 400px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,240,96,0.08) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .container {
+      position: relative; z-index: 1;
+      max-width: 960px; margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    /* Header */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 28px 0 48px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 56px;
+    }
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px; font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .logo span { color: var(--accent); }
+    .logo-badge {
+      font-size: 10px; font-weight: 500;
+      background: var(--surface2); border: 1px solid var(--border2);
+      color: var(--muted2); padding: 3px 8px; border-radius: 20px;
+      margin-left: 10px; vertical-align: middle; letter-spacing: 0.5px;
+    }
+    .header-tag {
+      font-size: 12px; color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 6px 14px; border-radius: 20px;
+    }
+
+    /* Hero */
+    .hero { margin-bottom: 56px; }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 500; color: var(--accent);
+      letter-spacing: 1px; text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .hero-eyebrow::before {
+      content: ''; display: block;
+      width: 20px; height: 1px; background: var(--accent);
+    }
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(36px, 5vw, 58px);
+      font-weight: 800; line-height: 1.05;
+      letter-spacing: -2px; margin-bottom: 16px;
+    }
+    h1 em { font-style: normal; color: var(--accent); }
+    .hero-sub {
+      font-size: 16px; color: var(--muted2);
+      max-width: 480px; line-height: 1.6;
+    }
+
+    /* Stats row */
+    .stats-row {
+      display: flex; gap: 32px; margin-top: 32px;
+      padding-top: 32px; border-top: 1px solid var(--border);
+    }
+    .stat-item { }
+    .stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px; font-weight: 700; color: var(--text);
+    }
+    .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* Main layout */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 700px) {
+      .main-grid { grid-template-columns: 1fr; }
+      h1 { letter-spacing: -1px; }
+    }
+
+    /* Panel */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: border-color 0.2s;
+    }
+    .panel:hover { border-color: var(--border2); }
+    .panel-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted2); margin-bottom: 24px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .panel-title::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* Form fields */
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block; font-size: 12px; font-weight: 500;
+      color: var(--muted2); margin-bottom: 8px;
+      letter-spacing: 0.3px;
+    }
+    .field input, .field select, .field textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      appearance: none;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: var(--accent2);
+      background: #1e1e2e;
+    }
+    .field input::placeholder, .field textarea::placeholder { color: var(--muted); }
+    .field textarea { min-height: 80px; resize: vertical; }
+    .field select option { background: #1a1a24; }
+
+    /* Key row */
+    .key-row { position: relative; }
+    .key-row input { padding-right: 48px; }
+    .key-saved {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      font-size: 11px; color: var(--accent); font-weight: 500;
+      display: none;
+    }
+    .remember-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 8px;
+    }
+    .remember-row input[type=checkbox] {
+      width: 14px; height: 14px; accent-color: var(--accent);
+      cursor: pointer; border-radius: 3px;
+    }
+    .remember-row label {
+      font-size: 12px; color: var(--muted); cursor: pointer;
+    }
+
+    /* Generate button */
+    .gen-btn {
+      width: 100%; padding: 14px;
+      background: var(--accent);
+      color: #0a0a0f;
+      border: none; border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-size: 14px; font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .gen-btn:hover { background: #d8ff70; transform: translateY(-1px); }
+    .gen-btn:active { transform: translateY(0); }
+    .gen-btn:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; transform: none; }
+
+    /* Tone pills */
+    .tone-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tone-pill {
+      padding: 7px 14px; border-radius: 20px;
+      border: 1px solid var(--border);
+      font-size: 12px; font-weight: 500;
+      color: var(--muted2); cursor: pointer;
+      background: transparent;
+      transition: all 0.15s;
+    }
+    .tone-pill:hover { border-color: var(--border2); color: var(--text); }
+    .tone-pill.active {
+      background: var(--accent2);
+      border-color: var(--accent2);
+      color: white;
+    }
+
+    /* Output panel */
+    .output-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      grid-column: 1 / -1;
+      display: none;
+    }
+    .output-panel.visible { display: block; }
+
+    .output-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 700px) {
+      .output-grid { grid-template-columns: 1fr; }
+    }
+
+    .out-section { }
+    .out-label {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted); margin-bottom: 10px;
+    }
+    .out-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 14px; line-height: 1.7;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 60px;
+    }
+    .time-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(200,240,96,0.1);
+      border: 1px solid rgba(200,240,96,0.2);
+      color: var(--accent);
+      padding: 8px 14px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+    }
+
+    /* Image */
+    .img-container {
+      border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      min-height: 200px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .img-container img { width: 100%; display: block; border-radius: 12px; }
+    .img-loading {
+      font-size: 13px; color: var(--muted);
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .img-spinner {
+      width: 24px; height: 24px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    /* Action buttons */
+    .action-row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    .act-btn {
+      padding: 8px 16px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s;
+      font-family: 'DM Sans', sans-serif;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .act-btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border2);
+      color: var(--muted2);
+    }
+    .act-btn-ghost:hover { border-color: var(--text); color: var(--text); }
+    .act-btn-accent {
+      background: var(--accent2);
+      border: none; color: white;
+    }
+    .act-btn-accent:hover { background: #8f7fff; }
+    .act-btn-green {
+      background: transparent;
+      border: 1px solid rgba(200,240,96,0.3);
+      color: var(--accent);
+    }
+    .act-btn-green:hover { background: rgba(200,240,96,0.1); }
+
+    /* Status */
+    .status-bar {
+      margin-top: 16px; padding: 10px 14px;
+      border-radius: 8px; font-size: 13px;
+      display: none; align-items: center; gap: 8px;
+    }
+    .status-bar.ok {
+      background: rgba(200,240,96,0.08);
+      border: 1px solid rgba(200,240,96,0.2);
+      color: var(--accent); display: flex;
+    }
+    .status-bar.err {
+      background: rgba(255,80,80,0.08);
+      border: 1px solid rgba(255,80,80,0.2);
+      color: #ff7070; display: flex;
+    }
+
+    /* History */
+    .history-section {
+      margin-top: 24px; padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+    .history-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px; font-weight: 600;
+      color: var(--muted2); margin-bottom: 14px;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .history-list { display: flex; flex-direction: column; gap: 10px; }
+    .history-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 16px;
+      cursor: pointer; transition: border-color 0.15s;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .history-item:hover { border-color: var(--border2); }
+    .history-topic { font-size: 13px; color: var(--text); }
+    .history-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .history-arrow { color: var(--muted); font-size: 16px; }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(0,0,0,0.2);
+      border-top-color: #0a0a0f;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Hashtag chips */
+    .hashtag-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .hashtag-chip {
+      background: rgba(124,106,255,0.12);
+      border: 1px solid rgba(124,106,255,0.2);
+      color: #a89bff; font-size: 12px;
+      padding: 4px 10px; border-radius: 20px;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 80px; padding-top: 32px;
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px; color: var(--muted);
+    }
+
+    /* Animate in */
+    .fade-in { animation: fadeIn 0.4s ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Insta AI Tool</h1>
-    <div class="subtitle">Generate captions, hashtags + images for Instagram</div>
+  <div class="orb1"></div>
+  <div class="orb2"></div>
 
-    <label>OpenRouter API key</label>
-    <input type="password" id="apiKey" placeholder="sk-or-v1-...">
+  <div class="container">
+    <header>
+      <div class="logo">Post<span>AI</span> <span class="logo-badge">BETA</span></div>
+      <div class="header-tag">Instagram Content Generator</div>
+    </header>
 
-    <label>Niche</label>
-    <input type="text" id="niche" placeholder="e.g. fitness, food, crypto, fashion">
-
-    <label>Tone</label>
-    <select id="tone">
-      <option value="professional">Professional</option>
-      <option value="casual and fun">Casual & Fun</option>
-      <option value="motivational">Motivational</option>
-      <option value="educational">Educational</option>
-      <option value="witty">Witty</option>
-    </select>
-
-    <label>Post topic</label>
-    <textarea id="topic" placeholder="e.g. 5 morning habits that changed my life"></textarea>
-
-    <button class="main-btn" id="genBtn" onclick="generate()">Generate post</button>
-
-    <div id="statusMsg" class="status" style="display:none"></div>
-
-    <div class="result" id="results" style="display:none">
-      <div class="sec-label">Caption + hashtags</div>
-      <div class="result-box" id="captionOut"></div>
-      <div class="btn-row">
-        <button class="action-btn" onclick="copyCaption()">Copy caption</button>
-        <button class="action-btn buffer-btn" onclick="openBuffer()">Open Buffer to schedule</button>
-      </div>
-
-      <div class="sec-label">Best time to post</div>
-      <div class="result-box" id="timeOut"></div>
-
-      <div class="sec-label">Generated image</div>
-      <div class="img-wrap" id="imgWrap">
-        <div class="img-placeholder">Image loading...</div>
-      </div>
-      <div class="btn-row" id="imgBtns" style="display:none">
-        <button class="action-btn dl-btn" onclick="downloadImg()">Download image</button>
+    <div class="hero">
+      <div class="hero-eyebrow">AI-Powered</div>
+      <h1>Create Instagram posts<br>in <em>seconds</em></h1>
+      <p class="hero-sub">Generate captions, hashtags, best posting times, and stunning visuals — all in one click.</p>
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-num">5+</div>
+          <div class="stat-label">Tones available</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">15</div>
+          <div class="stat-label">Hashtags per post</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">Free</div>
+          <div class="stat-label">Forever</div>
+        </div>
       </div>
     </div>
+
+    <div class="main-grid">
+      <!-- Input panel -->
+      <div class="panel">
+        <div class="panel-title">Setup</div>
+
+        <div class="field">
+          <label>API Key (OpenRouter)</label>
+          <div class="key-row">
+            <input type="password" id="apiKey" placeholder="sk-or-v1-...">
+            <span class="key-saved" id="keySaved">saved</span>
+          </div>
+          <div class="remember-row">
+            <input type="checkbox" id="rememberKey">
+            <label for="rememberKey">Remember on this device</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Niche</label>
+          <input type="text" id="niche" placeholder="e.g. fitness, food, crypto, travel">
+        </div>
+
+        <div class="field">
+          <label>Post Topic</label>
+          <textarea id="topic" placeholder="e.g. 5 morning habits that changed my life"></textarea>
+        </div>
+
+        <div class="field">
+          <label>Tone</label>
+          <div class="tone-pills">
+            <button class="tone-pill active" onclick="setTone(this,'professional')">Professional</button>
+            <button class="tone-pill" onclick="setTone(this,'casual and fun')">Casual</button>
+            <button class="tone-pill" onclick="setTone(this,'motivational')">Motivational</button>
+            <button class="tone-pill" onclick="setTone(this,'educational')">Educational</button>
+            <button class="tone-pill" onclick="setTone(this,'witty')">Witty</button>
+            <button class="tone-pill" onclick="setTone(this,'luxury')">Luxury</button>
+          </div>
+          <input type="hidden" id="tone" value="professional">
+        </div>
+
+        <button class="gen-btn" id="genBtn" onclick="generate()">
+          <span id="btnIcon">&#10024;</span>
+          <span id="btnText">Generate Post</span>
+        </button>
+
+        <div class="status-bar" id="statusBar"></div>
+      </div>
+
+      <!-- Tips panel -->
+      <div class="panel">
+        <div class="panel-title">How it works</div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;gap:14px;align-items:flex-start">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(200,240,96,0.1);border:1px solid rgba(200,240,96,0.2);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">1</div>
+            <div>
+              <div style="font-size:14px;font-weight:500;margin-bottom:4px">Enter your details</div>
+              <div style="font-size:13px;color:var(--muted2);line-height:1.5">Add your OpenRouter API key, niche, topic and tone.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:flex-start">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(124,106,255,0.1);border:1px solid rgba(124,106,255,0.2);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">2</div>
+            <div>
+              <div style="font-size:14px;font-weight:500;margin-bottom:4px">AI generates everything</div>
+              <div style="font-size:13px;color:var(--muted2);line-height:1.5">Caption, hashtags, best time to post, and a matching image.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:flex-start">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(200,240,96,0.1);border:1px solid rgba(200,240,96,0.2);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">3</div>
+            <div>
+              <div style="font-size:14px;font-weight:500;margin-bottom:4px">Schedule on Buffer</div>
+              <div style="font-size:13px;color:var(--muted2);line-height:1.5">Copy your caption and open Buffer to schedule directly to Instagram.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:flex-start">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(200,240,96,0.1);border:1px solid rgba(200,240,96,0.2);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">&#9733;</div>
+            <div>
+              <div style="font-size:14px;font-weight:500;margin-bottom:4px">Get your free API key</div>
+              <div style="font-size:13px;color:var(--muted2);line-height:1.5">Go to <a href="https://openrouter.ai" target="_blank" style="color:var(--accent2)">openrouter.ai</a> → sign up free → create a key.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- History -->
+        <div class="history-section" id="historySection" style="display:none">
+          <div class="history-title">Recent posts</div>
+          <div class="history-list" id="historyList"></div>
+        </div>
+      </div>
+
+      <!-- Output panel -->
+      <div class="output-panel" id="outputPanel">
+        <div class="panel-title">Generated Post</div>
+        <div class="output-grid">
+          <div>
+            <div class="out-section">
+              <div class="out-label">Caption</div>
+              <div class="out-box" id="captionOut" style="min-height:120px"></div>
+              <div class="action-row">
+                <button class="act-btn act-btn-ghost" onclick="copyCaption()">Copy caption</button>
+                <button class="act-btn act-btn-accent" onclick="openBuffer()">Open Buffer ↗</button>
+              </div>
+            </div>
+
+            <div class="out-section" style="margin-top:20px">
+              <div class="out-label">Hashtags</div>
+              <div class="hashtag-chips" id="hashtagsOut"></div>
+              <div class="action-row" style="margin-top:10px">
+                <button class="act-btn act-btn-ghost" onclick="copyHashtags()">Copy hashtags</button>
+              </div>
+            </div>
+
+            <div class="out-section" style="margin-top:20px">
+              <div class="out-label">Best time to post</div>
+              <div class="time-badge" id="timeOut">...</div>
+            </div>
+          </div>
+
+          <div>
+            <div class="out-label">Generated image</div>
+            <div class="img-container" id="imgContainer">
+              <div class="img-loading">
+                <div class="img-spinner"></div>
+                <span style="font-size:12px">Generating image...</span>
+              </div>
+            </div>
+            <div class="action-row" id="imgActions" style="display:none">
+              <button class="act-btn act-btn-green" onclick="downloadImg()">Download image</button>
+              <button class="act-btn act-btn-ghost" onclick="regenerateImg()">Regenerate</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div>PostAI — Built with OpenRouter + Pollinations.ai</div>
+      <div>Free forever · No login required</div>
+    </footer>
   </div>
 
   <script>
+    let currentTone = 'professional';
+    let lastImgPrompt = '';
     let lastImgUrl = '';
+    let history = JSON.parse(localStorage.getItem('postai_history') || '[]');
+
+    // Load saved key
+    window.onload = () => {
+      const saved = localStorage.getItem('or_api_key');
+      if (saved) {
+        document.getElementById('apiKey').value = saved;
+        document.getElementById('rememberKey').checked = true;
+        document.getElementById('keySaved').style.display = 'inline';
+      }
+      renderHistory();
+    };
+
+    document.getElementById('rememberKey').addEventListener('change', function() {
+      if (!this.checked) {
+        localStorage.removeItem('or_api_key');
+        document.getElementById('keySaved').style.display = 'none';
+      }
+    });
+
+    function setTone(el, tone) {
+      document.querySelectorAll('.tone-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      currentTone = tone;
+    }
 
     function showStatus(msg, type) {
-      const el = document.getElementById('statusMsg');
+      const el = document.getElementById('statusBar');
       el.textContent = msg;
-      el.className = 'status ' + type;
-      el.style.display = 'block';
+      el.className = 'status-bar ' + type;
     }
 
     function copyCaption() {
       const text = document.getElementById('captionOut').textContent;
-      navigator.clipboard.writeText(text).then(() => {
-        showStatus('Caption copied to clipboard!', 'ok');
-        setTimeout(() => document.getElementById('statusMsg').style.display = 'none', 2000);
-      });
+      navigator.clipboard.writeText(text).then(() => showStatus('Caption copied!', 'ok'));
+    }
+
+    function copyHashtags() {
+      const chips = document.querySelectorAll('.hashtag-chip');
+      const text = Array.from(chips).map(c => c.textContent).join(' ');
+      navigator.clipboard.writeText(text).then(() => showStatus('Hashtags copied!', 'ok'));
     }
 
     function openBuffer() {
-      const text = document.getElementById('captionOut').textContent;
-      navigator.clipboard.writeText(text).then(() => {
-        showStatus('Caption copied! Opening Buffer...', 'ok');
-        setTimeout(() => window.open('https://publish.buffer.com/compose', '_blank'), 600);
-      });
+      copyCaption();
+      setTimeout(() => window.open('https://publish.buffer.com/compose', '_blank'), 500);
     }
 
     function downloadImg() {
       if (!lastImgUrl) return;
       const a = document.createElement('a');
-      a.href = lastImgUrl;
-      a.download = 'insta-post.jpg';
-      a.target = '_blank';
+      a.href = lastImgUrl; a.download = 'postai-image.jpg'; a.target = '_blank';
       a.click();
+    }
+
+    function regenerateImg() {
+      if (!lastImgPrompt) return;
+      loadImage(lastImgPrompt + ' seed ' + Date.now());
+    }
+
+    function loadImage(prompt) {
+      document.getElementById('imgContainer').innerHTML = '<div class="img-loading"><div class="img-spinner"></div><span style="font-size:12px">Generating image...</span></div>';
+      document.getElementById('imgActions').style.display = 'none';
+      lastImgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ', instagram style, vibrant, cinematic, professional photography')}?width=1080&height=1080&nologo=true&seed=${Date.now()}`;
+      const img = new Image();
+      img.onload = () => {
+        document.getElementById('imgContainer').innerHTML = '';
+        document.getElementById('imgContainer').appendChild(img);
+        document.getElementById('imgActions').style.display = 'flex';
+      };
+      img.onerror = () => {
+        document.getElementById('imgContainer').innerHTML = '<div class="img-loading"><span style="font-size:12px;color:#ff7070">Image failed. Try regenerate.</span></div>';
+      };
+      img.src = lastImgUrl; img.style.width = '100%';
+    }
+
+    function renderHistory() {
+      if (history.length === 0) return;
+      document.getElementById('historySection').style.display = 'block';
+      const list = document.getElementById('historyList');
+      list.innerHTML = '';
+      history.slice(-3).reverse().forEach((item, i) => {
+        const el = document.createElement('div');
+        el.className = 'history-item';
+        el.innerHTML = `<div><div class="history-topic">${item.topic}</div><div class="history-meta">${item.niche} · ${item.tone}</div></div><span class="history-arrow">›</span>`;
+        el.onclick = () => loadHistoryItem(item);
+        list.appendChild(el);
+      });
+    }
+
+    function loadHistoryItem(item) {
+      document.getElementById('niche').value = item.niche;
+      document.getElementById('topic').value = item.topic;
+      document.getElementById('captionOut').textContent = item.caption;
+      document.getElementById('timeOut').textContent = item.bestTime;
+      renderHashtags(item.hashtags);
+      loadImage(item.imgPrompt);
+      document.getElementById('outputPanel').classList.add('visible');
+      window.scrollTo({ top: document.getElementById('outputPanel').offsetTop - 40, behavior: 'smooth' });
+    }
+
+    function renderHashtags(hashtagStr) {
+      const container = document.getElementById('hashtagsOut');
+      container.innerHTML = '';
+      const tags = hashtagStr.split(' ').filter(t => t.startsWith('#'));
+      tags.forEach(tag => {
+        const chip = document.createElement('span');
+        chip.className = 'hashtag-chip';
+        chip.textContent = tag;
+        container.appendChild(chip);
+      });
     }
 
     async function generate() {
       const apiKey = document.getElementById('apiKey').value.trim();
       const niche = document.getElementById('niche').value.trim();
-      const tone = document.getElementById('tone').value;
       const topic = document.getElementById('topic').value.trim();
       const btn = document.getElementById('genBtn');
 
       if (!apiKey || !niche || !topic) {
-        showStatus('Please fill in all fields.', 'err');
-        return;
+        showStatus('Please fill in all fields.', 'err'); return;
+      }
+
+      if (document.getElementById('rememberKey').checked) {
+        localStorage.setItem('or_api_key', apiKey);
+        document.getElementById('keySaved').style.display = 'inline';
       }
 
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span>Generating...';
-      document.getElementById('statusMsg').style.display = 'none';
-      document.getElementById('results').style.display = 'none';
+      document.getElementById('btnIcon').innerHTML = '<span class="spinner"></span>';
+      document.getElementById('btnText').textContent = 'Generating...';
+      showStatus('Talking to AI...', 'ok');
 
       const prompt = `You are an expert Instagram content creator.
 Niche: ${niche}
-Tone: ${tone}
+Tone: ${currentTone}
 Topic: ${topic}
 
-Respond in EXACTLY this format with no extra text:
+Respond in EXACTLY this format:
 
 CAPTION:
 [3-5 sentence engaging Instagram caption with relevant emojis]
 
 HASHTAGS:
-[15 relevant hashtags as a single line]
+[15 relevant hashtags as a single line starting with #]
 
 BEST TIME:
 [One line: best day and time to post for maximum reach]
@@ -162,7 +738,7 @@ IMAGE PROMPT:
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`,
             'HTTP-Referer': 'https://abdullahshabbir12.github.io',
-            'X-Title': 'Insta AI Tool'
+            'X-Title': 'PostAI'
           },
           body: JSON.stringify({
             model: 'google/gemma-3-4b-it:free',
@@ -171,7 +747,7 @@ IMAGE PROMPT:
         });
 
         const data = await res.json();
-        if (data.error) throw new Error(data.error.message || 'OpenRouter error.');
+        if (data.error) throw new Error(data.error.message || 'API error.');
         const text = data.choices?.[0]?.message?.content;
         if (!text) throw new Error('Empty response. Try again.');
 
@@ -182,28 +758,24 @@ IMAGE PROMPT:
 
         const caption = captionM ? captionM[1].trim() : text.trim();
         const hashtags = hashM ? hashM[1].trim() : '';
-        const bestTime = timeM ? timeM[1].trim() : '';
-        const imgPrompt = imgM ? imgM[1].trim() : `${niche} ${topic} photography`;
+        const bestTime = timeM ? timeM[1].trim() : 'Tuesday–Thursday, 7–9 PM';
+        const imgPrompt = imgM ? imgM[1].trim() : `${niche} ${topic}`;
+        lastImgPrompt = imgPrompt;
 
-        document.getElementById('captionOut').textContent = caption + (hashtags ? '\n\n' + hashtags : '');
-        document.getElementById('timeOut').textContent = bestTime || 'Post between 6-9pm on weekdays for best reach';
+        document.getElementById('captionOut').textContent = caption;
+        document.getElementById('timeOut').textContent = bestTime;
+        renderHashtags(hashtags);
+        loadImage(imgPrompt);
 
-        lastImgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imgPrompt + ', instagram style, vibrant, professional photography')}?width=1080&height=1080&nologo=true&seed=${Date.now()}`;
+        document.getElementById('outputPanel').classList.add('visible');
+        document.getElementById('outputPanel').classList.add('fade-in');
+        window.scrollTo({ top: document.getElementById('outputPanel').offsetTop - 40, behavior: 'smooth' });
 
-        document.getElementById('imgWrap').innerHTML = '<div class="img-placeholder">Image loading...</div>';
-        document.getElementById('results').style.display = 'block';
-
-        const img = new Image();
-        img.onload = () => {
-          document.getElementById('imgWrap').innerHTML = '';
-          document.getElementById('imgWrap').appendChild(img);
-          document.getElementById('imgBtns').style.display = 'flex';
-        };
-        img.onerror = () => {
-          document.getElementById('imgWrap').innerHTML = '<div class="img-placeholder">Image failed to load. Try again.</div>';
-        };
-        img.src = lastImgUrl;
-        img.style.width = '100%';
+        // Save to history
+        history.push({ topic, niche, tone: currentTone, caption, hashtags, bestTime, imgPrompt, date: new Date().toLocaleDateString() });
+        if (history.length > 10) history.shift();
+        localStorage.setItem('postai_history', JSON.stringify(history));
+        renderHistory();
 
         showStatus('Post generated! Ready to schedule.', 'ok');
 
@@ -212,7 +784,8 @@ IMAGE PROMPT:
       }
 
       btn.disabled = false;
-      btn.textContent = 'Generate post';
+      document.getElementById('btnIcon').textContent = '✨';
+      document.getElementById('btnText').textContent = 'Generate Post';
     }
   </script>
 </body>
