@@ -8,32 +8,44 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: sans-serif; background: #f4f4f4; display: flex; justify-content: center; padding: 40px 16px; }
     .card { background: white; border-radius: 12px; padding: 32px; width: 100%; max-width: 560px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-    h1 { font-size: 22px; margin-bottom: 24px; color: #111; }
+    h1 { font-size: 22px; margin-bottom: 4px; color: #111; }
+    .subtitle { font-size: 13px; color: #888; margin-bottom: 24px; }
     label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; margin-top: 16px; }
     input, select, textarea { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
     textarea { resize: vertical; min-height: 80px; }
-    button { margin-top: 24px; width: 100%; padding: 12px; background: #6c47ff; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
-    button:hover { background: #5a38e0; }
-    button:disabled { background: #aaa; cursor: not-allowed; }
+    button.main-btn { margin-top: 24px; width: 100%; padding: 12px; background: #6c47ff; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
+    button.main-btn:hover { background: #5a38e0; }
+    button.main-btn:disabled { background: #aaa; cursor: not-allowed; }
     .result { margin-top: 24px; }
     .result-box { background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
-    .result-box.image-box { padding: 0; overflow: hidden; }
-    .result-box.image-box img { width: 100%; border-radius: 8px; display: block; }
-    .label { font-size: 12px; font-weight: 500; color: #888; margin-bottom: 8px; margin-top: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .status { margin-top: 12px; font-size: 13px; color: #555; text-align: center; }
-    .status.success { color: #2e7d32; }
-    .status.error { color: #c62828; }
+    .img-wrap { border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0; background: #f9f9f9; min-height: 80px; display: flex; align-items: center; justify-content: center; }
+    .img-wrap img { width: 100%; display: block; }
+    .img-placeholder { font-size: 13px; color: #aaa; padding: 2rem; }
+    .sec-label { font-size: 11px; font-weight: 500; color: #aaa; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; margin-top: 20px; }
+    .btn-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .action-btn { padding: 7px 14px; font-size: 13px; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; background: white; color: #444; }
+    .action-btn:hover { background: #f4f4f4; }
+    .buffer-btn { background: #4a90e2; color: white; border: none; }
+    .buffer-btn:hover { background: #357abd; }
+    .dl-btn { background: #27ae60; color: white; border: none; }
+    .dl-btn:hover { background: #1e8449; }
+    .status { margin-top: 12px; font-size: 13px; text-align: center; }
+    .status.ok { color: #27ae60; }
+    .status.err { color: #e74c3c; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>Insta AI Tool</h1>
+    <div class="subtitle">Generate captions, hashtags + images for Instagram</div>
 
-    <label>Your OpenRouter API Key</label>
-    <input type="password" id="apiKey" placeholder="Paste your OpenRouter API key here">
+    <label>OpenRouter API key</label>
+    <input type="password" id="apiKey" placeholder="sk-or-v1-...">
 
     <label>Niche</label>
-    <input type="text" id="niche" placeholder="e.g. fitness, food, fashion, crypto">
+    <input type="text" id="niche" placeholder="e.g. fitness, food, crypto, fashion">
 
     <label>Tone</label>
     <select id="tone">
@@ -44,113 +56,163 @@
       <option value="witty">Witty</option>
     </select>
 
-    <label>Post Topic</label>
+    <label>Post topic</label>
     <textarea id="topic" placeholder="e.g. 5 morning habits that changed my life"></textarea>
 
-    <button id="generateBtn" onclick="generate()">Generate Post</button>
+    <button class="main-btn" id="genBtn" onclick="generate()">Generate post</button>
 
-    <div class="result" id="result" style="display:none">
-      <div class="label">Caption + Hashtags</div>
-      <div class="result-box" id="captionBox"></div>
+    <div id="statusMsg" class="status" style="display:none"></div>
 
-      <div class="label">Best Time to Post</div>
-      <div class="result-box" id="timeBox"></div>
+    <div class="result" id="results" style="display:none">
+      <div class="sec-label">Caption + hashtags</div>
+      <div class="result-box" id="captionOut"></div>
+      <div class="btn-row">
+        <button class="action-btn" onclick="copyCaption()">Copy caption</button>
+        <button class="action-btn buffer-btn" onclick="openBuffer()">Open Buffer to schedule</button>
+      </div>
 
-      <div class="label">Generated Image</div>
-      <div class="result-box image-box"><img id="generatedImage" src="" alt="Generated image"></div>
+      <div class="sec-label">Best time to post</div>
+      <div class="result-box" id="timeOut"></div>
 
-      <div class="status" id="status"></div>
+      <div class="sec-label">Generated image</div>
+      <div class="img-wrap" id="imgWrap">
+        <div class="img-placeholder">Image loading...</div>
+      </div>
+      <div class="btn-row" id="imgBtns" style="display:none">
+        <button class="action-btn dl-btn" onclick="downloadImg()">Download image</button>
+      </div>
     </div>
   </div>
 
   <script>
+    let lastImgUrl = '';
+
+    function showStatus(msg, type) {
+      const el = document.getElementById('statusMsg');
+      el.textContent = msg;
+      el.className = 'status ' + type;
+      el.style.display = 'block';
+    }
+
+    function copyCaption() {
+      const text = document.getElementById('captionOut').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        showStatus('Caption copied to clipboard!', 'ok');
+        setTimeout(() => document.getElementById('statusMsg').style.display = 'none', 2000);
+      });
+    }
+
+    function openBuffer() {
+      const text = document.getElementById('captionOut').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        showStatus('Caption copied! Opening Buffer...', 'ok');
+        setTimeout(() => window.open('https://publish.buffer.com/compose', '_blank'), 600);
+      });
+    }
+
+    function downloadImg() {
+      if (!lastImgUrl) return;
+      const a = document.createElement('a');
+      a.href = lastImgUrl;
+      a.download = 'insta-post.jpg';
+      a.target = '_blank';
+      a.click();
+    }
+
     async function generate() {
       const apiKey = document.getElementById('apiKey').value.trim();
       const niche = document.getElementById('niche').value.trim();
       const tone = document.getElementById('tone').value;
       const topic = document.getElementById('topic').value.trim();
-      const btn = document.getElementById('generateBtn');
-      const status = document.getElementById('status');
+      const btn = document.getElementById('genBtn');
 
       if (!apiKey || !niche || !topic) {
-        alert('Please fill in all fields.');
+        showStatus('Please fill in all fields.', 'err');
         return;
       }
 
       btn.disabled = true;
-      btn.textContent = 'Generating...';
-      status.textContent = '';
-      document.getElementById('result').style.display = 'none';
+      btn.innerHTML = '<span class="spinner"></span>Generating...';
+      document.getElementById('statusMsg').style.display = 'none';
+      document.getElementById('results').style.display = 'none';
 
-      const prompt = `You are an Instagram content expert.
+      const prompt = `You are an expert Instagram content creator.
 Niche: ${niche}
 Tone: ${tone}
 Topic: ${topic}
 
-Generate the following in this exact format:
+Respond in EXACTLY this format with no extra text:
 
 CAPTION:
-[Write an engaging Instagram caption, 3-5 sentences, with emojis]
+[3-5 sentence engaging Instagram caption with relevant emojis]
 
 HASHTAGS:
-[Write 15 relevant hashtags]
+[15 relevant hashtags as a single line]
 
 BEST TIME:
-[Best day and time to post this for maximum engagement, one line]
+[One line: best day and time to post for maximum reach]
 
 IMAGE PROMPT:
-[A short vivid image generation prompt that visually represents this post, max 20 words]`;
+[A vivid specific image generation prompt max 20 words no text in image]`;
 
       try {
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`,
-            'HTTP-Referer': 'http://localhost:3000',
+            'HTTP-Referer': 'https://abdullahshabbir12.github.io',
             'X-Title': 'Insta AI Tool'
           },
           body: JSON.stringify({
-             model: 'google/gemma-3-4b-it:free',
+            model: 'google/gemma-3-4b-it:free',
             messages: [{ role: 'user', content: prompt }]
           })
         });
 
-        const data = await response.json();
-        console.log('OpenRouter response:', data);
-
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message || 'OpenRouter error.');
         const text = data.choices?.[0]?.message?.content;
-        if (!text) throw new Error('No response. Check your API key or try again.');
+        if (!text) throw new Error('Empty response. Try again.');
 
-        const captionMatch = text.match(/CAPTION:\n([\s\S]*?)(?=\nHASHTAGS:)/);
-        const hashtagsMatch = text.match(/HASHTAGS:\n([\s\S]*?)(?=\nBEST TIME:)/);
-        const timeMatch = text.match(/BEST TIME:\n([\s\S]*?)(?=\nIMAGE PROMPT:)/);
-        const imagePromptMatch = text.match(/IMAGE PROMPT:\n([\s\S]*?)$/);
+        const captionM = text.match(/CAPTION:\n([\s\S]*?)(?=\nHASHTAGS:)/);
+        const hashM = text.match(/HASHTAGS:\n([\s\S]*?)(?=\nBEST TIME:)/);
+        const timeM = text.match(/BEST TIME:\n([\s\S]*?)(?=\nIMAGE PROMPT:)/);
+        const imgM = text.match(/IMAGE PROMPT:\n([\s\S]*?)$/);
 
-        const caption = captionMatch ? captionMatch[1].trim() : text;
-        const hashtags = hashtagsMatch ? hashtagsMatch[1].trim() : '';
-        const bestTime = timeMatch ? timeMatch[1].trim() : '';
-        const imagePrompt = imagePromptMatch ? imagePromptMatch[1].trim() : niche + ' ' + topic;
+        const caption = captionM ? captionM[1].trim() : text.trim();
+        const hashtags = hashM ? hashM[1].trim() : '';
+        const bestTime = timeM ? timeM[1].trim() : '';
+        const imgPrompt = imgM ? imgM[1].trim() : `${niche} ${topic} photography`;
 
-        document.getElementById('captionBox').textContent = caption + (hashtags ? '\n\n' + hashtags : '');
-        document.getElementById('timeBox').textContent = bestTime || 'Check your analytics for best times';
+        document.getElementById('captionOut').textContent = caption + (hashtags ? '\n\n' + hashtags : '');
+        document.getElementById('timeOut').textContent = bestTime || 'Post between 6-9pm on weekdays for best reach';
 
-        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imagePrompt + ', instagram post style, high quality, vibrant')}?width=1080&height=1080&nologo=true`;
-        document.getElementById('generatedImage').src = imageUrl;
-        document.getElementById('result').style.display = 'block';
+        lastImgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imgPrompt + ', instagram style, vibrant, professional photography')}?width=1080&height=1080&nologo=true&seed=${Date.now()}`;
 
-        status.textContent = 'Post generated! Image is loading...';
-        status.className = 'status success';
+        document.getElementById('imgWrap').innerHTML = '<div class="img-placeholder">Image loading...</div>';
+        document.getElementById('results').style.display = 'block';
+
+        const img = new Image();
+        img.onload = () => {
+          document.getElementById('imgWrap').innerHTML = '';
+          document.getElementById('imgWrap').appendChild(img);
+          document.getElementById('imgBtns').style.display = 'flex';
+        };
+        img.onerror = () => {
+          document.getElementById('imgWrap').innerHTML = '<div class="img-placeholder">Image failed to load. Try again.</div>';
+        };
+        img.src = lastImgUrl;
+        img.style.width = '100%';
+
+        showStatus('Post generated! Ready to schedule.', 'ok');
 
       } catch (err) {
-        console.error(err);
-        status.textContent = 'Error: ' + err.message;
-        status.className = 'status error';
-        document.getElementById('result').style.display = 'block';
+        showStatus('Error: ' + err.message, 'err');
       }
 
       btn.disabled = false;
-      btn.textContent = 'Generate Post';
+      btn.textContent = 'Generate post';
     }
   </script>
 </body>
