@@ -386,7 +386,7 @@
 
   <script>
     // ── CONFIG: replace with your actual OpenRouter key ──
-    const OR_KEY = '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';
+    
     // ────────────────────────────────────────────────────
 
     let currentTone = 'professional';
@@ -475,7 +475,7 @@
       currentImgPrompt = basePrompt;
       const grid = document.getElementById('imagesGrid');
       grid.innerHTML = '';
-      const styles = ['cinematic photography, golden hour', 'flat lay aesthetic, pastel tones', 'dark moody editorial', 'bright vibrant lifestyle'];
+      const styles = ['cinematic photography, golden hour'];
       styles.forEach((style, i) => {
         const item = document.createElement('div');
         item.className = 'img-item';
@@ -531,10 +531,10 @@ VERSION 2 (personal and human):
 Only output VERSION 1: and VERSION 2: with no extra text.`;
 
       try {
-        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        const res = await fetch('https://postai-backend.abubakr43210.workers.dev', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OR_KEY}`, 'HTTP-Referer': 'https://abdullahshabbir12.github.io', 'X-Title': 'PostAI' },
-          body: JSON.stringify({ model: 'google/gemma-3-4b-it:free', messages: [{ role: 'user', content: prompt }] })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: 'mistralai/mistral-small-3.1-24b-instruct:free', messages: [{ role: 'user', content: prompt }] })
         });
         const data = await res.json();
         const text = data.choices?.[0]?.message?.content || '';
@@ -595,9 +595,11 @@ STRATEGY:
 [Tip 5 title]: [One sentence strategy tip about content ideas for ${niche}]`;
 
       try {
-        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OR_KEY}`, 'HTTP-Referer': 'https://abdullahshabbir12.github.io', 'X-Title': 'PostAI' },
+        const res = await fetch('https://postai-backend.abubakr43210.workers.dev', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
           body: JSON.stringify({ model: 'google/gemma-3-4b-it:free', messages: [{ role: 'user', content: prompt }] })
         });
 
