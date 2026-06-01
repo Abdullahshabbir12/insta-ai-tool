@@ -534,7 +534,7 @@ Only output VERSION 1: and VERSION 2: with no extra text.`;
         const res = await fetch('https://postai-backend.abubakr43210.workers.dev', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'meta-llama/llama-3.1-8b-instruct:free', messages: [{ role: 'user', content: prompt }] })
+          body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: prompt }] })
         });
         const data = await res.json();
         const text = data.choices?.[0]?.message?.content || '';
@@ -600,7 +600,7 @@ STRATEGY:
   headers: {
     'Content-Type': 'application/json',
   },
-          body: JSON.stringify({ model: 'meta-llama/llama-3.1-8b-instruct:free', messages: [{ role: 'user', content: prompt }] })
+          body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: prompt }] })
         });
 
         const data = await res.json();
